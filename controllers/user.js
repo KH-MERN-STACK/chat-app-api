@@ -52,3 +52,14 @@ export const loginUser = asyncHandler(async (req, res, next) => {
 		})
 	} else throw new Error("unathenticated user")
 })
+
+
+export const allUsers = asyncHandler(async (req, res, next) => {
+	const keyWord = req.query.search
+		? {
+				$or: [{ name: { $regex: req.query.search, $options: "i" } }, { email: { $regex: req.query.search, $options: "i" } }],
+		  }
+		: {}
+	const users = await User.find(keyWord).find({ _id: { $ne: req.userId } })
+	res.send(users)
+})
