@@ -12,7 +12,7 @@ dotenv.config()
 const Port = process.env.Port
 
 app.use(express.json())
-app.get("/api/chats", (req, res) => res.send(chats))
+app.get("/", (req, res) => res.send(chats))
 app.use("/api/user", uerRoutes)
 app.use("/api/chats", protect, chatRoutes)
 
