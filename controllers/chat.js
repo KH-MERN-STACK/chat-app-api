@@ -2,6 +2,7 @@ import asyncHandler from "express-async-handler"
 import { StatusCodes } from "http-status-codes"
 import Chat from "../models/chatModel.js"
 import User from "../models/userModel.js"
+import chat from "../models/chatModel.js"
 
 export const fetchChat = asyncHandler(async (req, res, next) => {
 	const loggedInUserId = req.userId
@@ -63,11 +64,54 @@ export const accessChat = asyncHandler(async (req, res, next) => {
 })
 
 export const createGroup = asyncHandler(async (req, res, next) => {
-	res.send()
+	let { users, name } = req.body
+	if (!users || !name) {
+		res.status(StatusCodes.BAD_REQUEST)
+		throw new Error(`please fill up fields`)
+	}
+	try {
+		users = JSON.parse(users)
+		users.push(req.userId)
+	} catch (err) {
+		throw new Error("Invalid incoming data")
+	}
+
+	if (users.length < 2) {
+		res.status(400)
+		throw new Error("Group chat must have at least 2 users")
+	}
+	try {
+		const GroupChat = await Chat.create({
+			chatName: name,
+			users: users,
+			isGroupChat: true,
+			groupAdmin: req.userId,
+		})
+
+		const fullChat = await Chat.findOne({ _id: GroupChat._id }).populate("users", "-password").populate("groupAdmin", "-password")
+		res.status(StatusCodes.OK).json(fullChat)
+	} catch (err) {
+		throw new Error(err.message)
+	}
 })
 
 export const updateGroup = asyncHandler(async (req, res, next) => {
-	res.send()
+	const { chatId, chatName } = req.body
+
+	if (!chatId || !chatName) {
+		res.status(400)
+		throw new Error(`please select a chat and  provide a new chat name`)
+	}
+
+	console.log(chatName, chatId)
+	const updatedGroup = await Chat.findOneAndUpdate({ _id: chatId }, { chatName }, { new: true }).populate("users", "-password").populate("groupAdmin", "-password")
+
+	if (!updatedGroup) {
+		res.status(404)
+		throw new Error(`chat not found`)
+	}
+
+	res.status(201).json(updatedGroup)
 })
 
 export const leaveGroup = asyncHandler(async (req, res, next) => {
@@ -75,9 +119,27 @@ export const leaveGroup = asyncHandler(async (req, res, next) => {
 })
 
 export const addMember = asyncHandler(async (req, res, next) => {
-	res.send()
+	const { chatId, userId } = req.body
+	const added = await Chat.findByIdAndUpdate(chatId, { $push: { users: userId } }, { new: true })
+		.populate("users", "-password")
+		.populate("groupAdmin", "-password")
+
+	if (!added) {
+		res.status(404)
+		throw new Error("chat not found")
+	}
+	res.send(added)
 })
 
 export const removeMember = asyncHandler(async (req, res, next) => {
-	res.send()
+		const { chatId, userId } = req.body
+		const removed = await Chat.findByIdAndUpdate(chatId, { $pull: { users: userId } }, { new: true })
+			.populate("users", "-password")
+			.populate("groupAdmin", "-password")
+
+		if (!removed) {
+			res.status(404)
+			throw new Error("chat not found")
+		}
+		res.send(removed)
 })
