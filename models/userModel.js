@@ -39,7 +39,7 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 }
 
 userSchema.methods.createToken = function (payload) {
-	return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: process.env.JWT_LIFE_TIME })
+	return jwt.sign({ id: payload }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_LIFE_TIME })
 }
 
 const User = mongoose.model("User", userSchema)

@@ -5,11 +5,11 @@ import User from "../models/userModel.js"
 import chat from "../models/chatModel.js"
 
 export const fetchChat = asyncHandler(async (req, res, next) => {
-	const loggedInUserId = req.userId
+	const loggedInUserId = req.body.userId
 	let chats = await Chat.find({
 		users: { $elemMatch: { $eq: loggedInUserId } },
 	})
-		.populate("users", "-password")
+		.populate("users")
 		.populate("groupAdmin", "-password")
 		.populate("latestMessage")
 		.sort({ updatedAt: -1 })
@@ -22,7 +22,7 @@ export const fetchChat = asyncHandler(async (req, res, next) => {
 })
 
 export const accessChat = asyncHandler(async (req, res, next) => {
-	const userId = req.userId
+	const { userId } = req.body
 	if (!userId) {
 		res.status(StatusCodes.BAD_REQUEST)
 		throw new Error("userId pram not sent with request")
@@ -39,7 +39,6 @@ export const accessChat = asyncHandler(async (req, res, next) => {
 		select: "name pic email",
 	})
 
-	// return res.send(isChat)
 
 	if (isChat.length > 0) {
 		res.send(isChat[0])
@@ -103,7 +102,6 @@ export const updateGroup = asyncHandler(async (req, res, next) => {
 		throw new Error(`please select a chat and  provide a new chat name`)
 	}
 
-	console.log(chatName, chatId)
 	const updatedGroup = await Chat.findOneAndUpdate({ _id: chatId }, { chatName }, { new: true }).populate("users", "-password").populate("groupAdmin", "-password")
 
 	if (!updatedGroup) {

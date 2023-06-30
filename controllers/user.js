@@ -21,14 +21,15 @@ export const registerUser = asyncHandler(async (req, res, next) => {
 		password,
 		pic,
 	})
-
+	console.log("in registerUser" ,user._id,user.createToken(user._id))
 	if (user) {
 		res.status(StatusCodes.CREATED).json({
 			_id: user._id,
 			name: user.name,
-			password: user.password,
+			email: user.email,
+			isAdmin: user.isAdmin,
 			pic: user.pic,
-			token: user.createToken({ userId: user._id }),
+			token: user.createToken(user._id),
 		})
 	} else {
 		res.status(StatusCodes.BAD_REQUEST)
@@ -47,8 +48,9 @@ export const loginUser = asyncHandler(async (req, res, next) => {
 			_id: user._id,
 			name: user.name,
 			email: user.email,
-			picture: user.pic,
-			token: user.createToken({ userId: user._id }),
+			isAdmin:user.isAdmin,
+			pic: user.pic,
+			token: user.createToken(user._id),
 		})
 	} else throw new Error("unathenticated user")
 })
